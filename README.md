@@ -77,7 +77,7 @@ Works on `discord.com`, `ptb.discord.com` and `canary.discord.com` in Chrome 111
 ## How it works
 
 ```mermaid
-flowchart LR
+flowchart TB
   D[Discord web app] -- "fetch / XHR responses<br/>it already requested" --> T["tap.js<br/>(page world)"]
   T -- postMessage --> C["content.js<br/>(isolated world)"]
   C -- validated payloads --> B["background.js<br/>(service worker)"]
