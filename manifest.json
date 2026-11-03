@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Scrollback: Chat Exporter for Discord",
   "short_name": "Scrollback",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Save Discord chats you can already see to TXT, Markdown, HTML, JSON or CSV. Local only. No token, no extra API calls.",
   "minimum_chrome_version": "111",
   "permissions": ["storage", "unlimitedStorage", "downloads"],

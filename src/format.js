@@ -5,7 +5,7 @@
  */
 (function (root) {
   var DISCORD_EPOCH = 1420070400000;
-  var VERSION = '2.0.0';
+  var VERSION = '2.0.1';
 
   // ---------- snowflakes ----------
   var SNOWFLAKE = /^\d{15,21}$/;

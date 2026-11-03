@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1 (2026-11-03)
+
+- Fixed: a history job that started with the chat already scrolled to the top could end early without loading older messages. Most visible on slower machines.
+
 ## 2.0.0 (2026-10-30)
 
 Renamed to Scrollback and rebuilt for the Chrome Web Store.
