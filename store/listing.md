@@ -4,11 +4,11 @@ Paste each block into the matching field of the developer dashboard.
 
 ## Item name (max 75)
 
-Scrollback: Chat Exporter for Discord
+Scrollback: Chat Exporter for Discord, No Token
 
 ## Summary (max 132)
 
-Save Discord chats you can already see to TXT, Markdown, HTML, JSON or CSV. Local only. No token, no extra API calls.
+Export Discord chats to TXT, Markdown, HTML, JSON or CSV. No token, no self-bot. It saves only what your Discord tab already loads.
 
 ## Category
 
@@ -23,6 +23,9 @@ English
 Scrollback keeps a copy of the Discord messages you open, so you can search them, export them and keep them.
 
 It works by reading the message lists your Discord tab already downloads. It sends no requests to Discord of its own and never touches your login token. Everything stays in your browser.
+
+NO TOKEN, NO SELF-BOT
+Most Discord exporters ask you to paste your login token into a separate program, which then calls Discord's API directly. That is a self-bot, and Discord bans accounts for it. Scrollback never asks for your token and never calls the API. When it loads history, it scrolls the real chat in your tab, at a person's pace, so Discord's own client does the loading.
 
 WHAT YOU CAN DO
 • Copy a whole chat to the clipboard in one click, ready to paste into notes or an AI assistant

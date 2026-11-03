@@ -134,9 +134,9 @@ async function frame(ctx, file, { title, sub, img, w = 1280, h = 800, imgW }) {
   await frame(ctx, path.join(S, '2-history.png'), { title: 'Load 7 days, 90 days or everything', sub: 'Scrollback scrolls the chat for you and shows progress right on the page.', img: path.join(RAW, 'job.png') });
   await frame(ctx, path.join(S, '3-library.png'), { title: 'Every saved chat in one place', sub: 'Search messages, export by date range, back up and restore.', img: path.join(RAW, 'library.png') });
   await frame(ctx, path.join(S, '4-export.png'), { title: 'Clean exports you can read', sub: 'Replies, reactions, images and day headers. Light and dark mode.', img: path.join(RAW, 'export.png') });
-  await frame(ctx, path.join(S, '5-privacy.png'), { title: 'Stays on your device', sub: 'No token, no account, no server, no extra API calls. Scrollback reads only what Discord already loads in your tab.' });
-  await frame(ctx, path.join(OUT, 'promo-440x280.png'), { title: 'Save your Discord chats', w: 440, h: 280 });
-  await frame(ctx, path.join(OUT, 'marquee-1400x560.png'), { title: 'Save, search and export your Discord chats', sub: 'Local only. No token. No extra API calls.', w: 1400, h: 560 });
+  await frame(ctx, path.join(S, '5-privacy.png'), { title: 'No token. No self-bot.', sub: 'Scrollback never asks for your token and never calls Discord\'s API. It saves what your tab already loads, and it all stays on your device.' });
+  await frame(ctx, path.join(OUT, 'promo-440x280.png'), { title: 'Export Discord chats. No token.', w: 440, h: 280 });
+  await frame(ctx, path.join(OUT, 'marquee-1400x560.png'), { title: 'Export your Discord chats without your token', sub: 'No token. No self-bot. It saves only what your Discord tab already loads.', w: 1400, h: 560 });
   fs.copyFileSync(path.join(OUT, '../icons/128.png'), path.join(OUT, 'icon-128.png'));
   await ctx.close();
   console.log(fs.readdirSync(S).filter((f) => f.endsWith('.png')).join('\n'));

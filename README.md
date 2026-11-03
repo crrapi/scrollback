@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="store/marquee-1400x560.png" alt="Scrollback: save, search and export your Discord chats" width="100%">
+  <img src="store/marquee-1400x560.png" alt="Scrollback: export your Discord chats without your token" width="100%">
 </p>
 
 <h1 align="center">Scrollback</h1>
 
 <p align="center">
   <b>Save, search and export the Discord chats you can already see.</b><br>
-  Local only. No token. No extra API calls.
+  No token. No self-bot. Local only.
 </p>
 
 <p align="center">
@@ -29,6 +29,19 @@
 Scrollback is a Chrome extension that keeps a copy of every Discord message your browser loads. Copy a whole chat in one click, export it to five formats, or let it scroll back through 7 days, 90 days or the full history for you.
 
 It never touches your login token and never calls Discord's API. It reads only the responses the Discord web app already downloads, so it acts the same as you scrolling by hand.
+
+### Why no token?
+
+Most Discord exporters ask for your login token and call Discord's API from a separate program. Discord treats that as a self-bot, and accounts get banned for it. Scrollback takes a different route:
+
+| | Token-based exporters | Scrollback |
+|---|---|---|
+| Needs your login token | Yes | No |
+| Who talks to Discord | The exporter, directly | Your normal Discord tab |
+| Speed of history loads | As fast as the API allows | A person scrolling |
+| Works offline on saved chats | No | Yes, from the library |
+
+History jobs still make Discord's client load pages, the same as scrolling by hand. For very large servers, set the pace to Gentle in the library settings.
 
 <table>
   <tr>

@@ -2,7 +2,7 @@
   "name": "scrollback",
   "version": "2.0.1",
   "private": true,
-  "description": "Chrome extension that saves and exports Discord chats you can already see. Local only, no token, no extra API calls.",
+  "description": "Chrome extension that saves and exports Discord chats you can already see. No token, no self-bot, local only.",
   "license": "MIT",
   "repository": "github:crrapi/scrollback",
   "scripts": {
