@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Scrollback</title>
+  <link rel="stylesheet" href="../ui/theme.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="../icons/32.png" width="20" height="20" alt="">
+    <h1>Scrollback</h1>
+    <button id="openLib" class="link" title="Open the library">Library</button>
+  </header>
+
+  <div id="where" class="mut where">Reading tab…</div>
+
+  <section id="main" hidden>
+    <div class="card">
+      <div class="count"><span id="count">0</span> <small>messages saved here</small></div>
+      <div id="span" class="mut small"></div>
+      <div class="row gap">
+        <button id="copy" class="primary">Copy all</button>
+        <button id="download">Download</button>
+        <select id="format" aria-label="Export format"></select>
+      </div>
+
+      <div class="lbl">Load and export this chat</div>
+      <div class="row seg">
+        <button data-scope="channel" data-days="7">7d</button>
+        <button data-scope="channel" data-days="30">30d</button>
+        <button data-scope="channel" data-days="90">90d</button>
+        <button data-scope="channel" data-days="0">All</button>
+      </div>
+
+      <div id="serverBlock">
+        <div class="lbl">Every channel in this server</div>
+        <div class="row seg">
+          <button data-scope="server" data-days="7">7d</button>
+          <button data-scope="server" data-days="30">30d</button>
+          <button data-scope="server" data-days="90">90d</button>
+          <button data-scope="server" data-days="0">All</button>
+        </div>
+      </div>
+
+      <div class="row gap" id="runningRow" hidden>
+        <button id="stop" class="danger">Stop the running job</button>
+      </div>
+
+      <div class="row gap">
+        <button id="saveMedia">Save media from this chat</button>
+      </div>
+      <div class="row gap" id="lastRow" hidden>
+        <button id="copyLast"></button>
+      </div>
+      <div id="status" class="status" role="status"></div>
+    </div>
+  </section>
+
+  <section id="off" class="card" hidden>
+    <p>Open a channel or DM on <b>discord.com</b> in this tab. Scrollback saves messages as Discord loads them.</p>
+    <button id="openDiscord" class="primary">Open Discord</button>
+  </section>
+
+  <footer class="mut small">
+    <span><span id="total">0</span> messages in <span id="chans">0</span> chats</span>
+    <span>Stored on this device only</span>
+  </footer>
+
+  <script src="../src/format.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

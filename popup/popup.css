@@ -1,0 +1,13 @@
+body { width: 340px; padding: 12px; }
+header { display: flex; align-items: center; gap: 8px; }
+header h1 { font-size: 15px; flex: 1; }
+button.link { background: none; border: 0; color: var(--acc); padding: 2px 4px; }
+.where { margin: 6px 0 10px; font-size: 12px; overflow-wrap: anywhere; }
+.count { font-size: 26px; font-weight: 750; line-height: 1.1; }
+.count small { font-size: 12px; font-weight: 400; color: var(--mut); }
+.small { font-size: 11px; }
+.gap { margin-top: 10px; }
+.row select { flex: 0 0 auto; }
+.seg button { padding: 7px 4px; }
+#off p { margin: 0 0 10px; }
+footer { display: flex; justify-content: space-between; margin-top: 10px; }

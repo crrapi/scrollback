@@ -1,0 +1,31 @@
+name: Bug report
+description: Something does not work
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Scrollback version
+      placeholder: "2.0.0"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: "Chrome 156"
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options: [Server channel, DM, Thread, Forum, Other]
+  - type: markdown
+    attributes:
+      value: Do not paste exported chats or anything with other people's messages in them.

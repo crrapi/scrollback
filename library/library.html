@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Scrollback Library</title>
+  <link rel="icon" href="../icons/32.png">
+  <link rel="stylesheet" href="../ui/theme.css">
+  <link rel="stylesheet" href="library.css">
+</head>
+<body>
+  <header class="top">
+    <img src="../icons/48.png" width="28" height="28" alt="">
+    <h1>Scrollback</h1>
+    <nav>
+      <button data-tab="chats" class="tab on">Chats</button>
+      <button data-tab="settings" class="tab">Settings</button>
+      <button data-tab="about" class="tab">Privacy and help</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="welcome" class="card welcome" hidden>
+      <h2>Scrollback is ready</h2>
+      <ol>
+        <li>Open a channel or DM on discord.com. Reload the tab once if it was already open.</li>
+        <li>Scroll as usual. Every message Discord loads is saved on this device.</li>
+        <li>Click the toolbar icon to copy or download. Use 7d, 30d, 90d or All to load more history for you.</li>
+      </ol>
+      <button id="dismissWelcome">Got it</button>
+    </section>
+
+    <section data-pane="chats">
+      <div class="bar">
+        <input id="filter" type="search" placeholder="Filter chats" aria-label="Filter chats">
+        <span id="summary" class="mut"></span>
+      </div>
+      <div id="empty" class="card mut" hidden>No saved chats yet. Open Discord and scroll a channel.</div>
+      <table id="chats" hidden>
+        <thead><tr><th>Chat</th><th class="num">Messages</th><th>Covers</th><th>Updated</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <div id="detail" class="card" hidden>
+        <div class="dhead">
+          <div><h2 id="dTitle"></h2><div id="dSub" class="mut"></div></div>
+          <button id="dClose" aria-label="Close">Close</button>
+        </div>
+        <div class="row tools">
+          <select id="dFormat" aria-label="Format"></select>
+          <select id="dRange" aria-label="Range">
+            <option value="0">Everything saved</option><option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last year</option>
+          </select>
+          <button id="dDownload" class="primary">Download</button>
+          <button id="dCopy">Copy</button>
+          <button id="dMedia">Save media</button>
+          <button id="dDelete" class="danger">Delete</button>
+        </div>
+        <input id="dSearch" type="search" placeholder="Search messages in this chat" aria-label="Search messages">
+        <div id="dStatus" class="status" role="status"></div>
+        <div id="dList" class="msgs"></div>
+      </div>
+    </section>
+
+    <section data-pane="settings" hidden>
+      <div class="card form">
+        <label>Default export format <select id="sFormat"></select></label>
+        <label>Timestamps
+          <select id="sTime"><option value="iso">ISO 8601 (UTC)</option><option value="local">Local time</option></select>
+        </label>
+        <label>Scroll speed for history jobs
+          <select id="sPace"><option value="normal">Normal</option><option value="gentle">Gentle (slower)</option></select>
+        </label>
+        <label class="check"><input type="checkbox" id="sMedia"> Also save images and videos when a 7d / 30d / 90d / All job runs</label>
+        <div id="sStatus" class="status" role="status"></div>
+      </div>
+
+      <h3 class="lbl">Your data</h3>
+      <div class="card form">
+        <div id="usage" class="mut"></div>
+        <div class="row">
+          <button id="backup">Back up everything (JSON)</button>
+          <label class="filebtn">Restore from backup<input type="file" id="restore" accept="application/json,.json" hidden></label>
+          <button id="wipe" class="danger">Delete everything</button>
+        </div>
+        <div id="dataStatus" class="status" role="status"></div>
+      </div>
+    </section>
+
+    <section data-pane="about" hidden>
+      <div class="card prose">
+        <h2>What Scrollback does</h2>
+        <p>Scrollback reads the message lists your Discord tab already downloads and keeps a copy in this browser. It sends no requests to Discord of its own. It never reads your login token or your request headers.</p>
+        <p>History jobs (7d, 30d, 90d, All) scroll the chat for you, the same way you would by hand. Server jobs open each text channel in the sidebar one at a time.</p>
+        <h2>Privacy</h2>
+        <p>Everything stays in this browser profile. Scrollback has no server, no analytics and no remote code. Nothing leaves your device unless you download or copy it. Delete one chat or all data at any time from this page; removing the extension also removes the data.</p>
+        <h2>Limits</h2>
+        <ul>
+          <li>Messages that arrive live while a chat is open are saved the next time Discord reloads that chat.</li>
+          <li>Edits and deletions after a message was saved do not update the saved copy until Discord loads it again.</li>
+          <li>Discord attachment links expire after about a day. Save media soon after you load a chat.</li>
+          <li>Only export chats you have the right to keep. Respect the people in them and Discord's Terms.</li>
+        </ul>
+        <p class="mut">Scrollback is not affiliated with or endorsed by Discord Inc. <span id="ver"></span></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="../src/format.js"></script>
+  <script src="../src/db.js"></script>
+  <script src="library.js"></script>
+</body>
+</html>

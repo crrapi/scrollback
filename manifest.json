@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Scrollback: Chat Exporter for Discord",
+  "short_name": "Scrollback",
+  "version": "2.0.0",
+  "description": "Save Discord chats you can already see to TXT, Markdown, HTML, JSON or CSV. Local only. No token, no extra API calls.",
+  "minimum_chrome_version": "111",
+  "permissions": ["storage", "unlimitedStorage", "downloads"],
+  "host_permissions": ["https://discord.com/*", "https://ptb.discord.com/*", "https://canary.discord.com/*"],
+  "background": { "service_worker": "src/background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://discord.com/*", "https://ptb.discord.com/*", "https://canary.discord.com/*"],
+      "js": ["src/tap.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://discord.com/*", "https://ptb.discord.com/*", "https://canary.discord.com/*"],
+      "js": ["src/format.js", "src/content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Scrollback",
+    "default_icon": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png" }
+  },
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "options_page": "library/library.html",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'"
+  }
+}

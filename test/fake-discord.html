@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>#general | Test Server</title>
+<style>
+  body { margin: 0; display: flex; height: 100vh; font: 14px system-ui; background: #313338; color: #ddd; }
+  nav { width: 220px; height: 100vh; overflow-y: auto; background: #2b2d31; }
+  nav a { display: block; padding: 8px 12px; color: #aaa; height: 120px; }
+  main { flex: 1; display: flex; flex-direction: column; }
+  section[class*="title"] h1 { font-size: 16px; margin: 0; padding: 12px; }
+  .scroller { flex: 1; overflow-y: auto; }
+  ol { list-style: none; margin: 0; padding: 0; }
+  li { padding: 6px 12px; min-height: 40px; border-bottom: 1px solid #3a3c41; }
+</style>
+</head>
+<body>
+<nav id="side"></nav>
+<main>
+  <section class="title_x"><h1 id="h1"></h1></section>
+  <div class="scroller" id="sc"><ol data-list-id="chat-messages" id="list"></ol></div>
+</main>
+<script>
+  // Minimal stand-in for the Discord client: a channel sidebar and a message
+  // list that fetches older pages from /api/v9 as it is scrolled up.
+  var GUILD = '111111111111111111';
+  var CHANNELS = [['222222222222222222', 'general'], ['333333333333333333', 'random'], ['444444444444444444', 'memes']];
+  var oldest = null, loading = false, done = false, cur = null;
+
+  CHANNELS.forEach(function (c) {
+    var a = document.createElement('a');
+    a.href = '/channels/' + GUILD + '/' + c[0]; a.textContent = c[1]; a.setAttribute('aria-label', c[1] + ' (text channel)');
+    a.onclick = function (e) { e.preventDefault(); history.pushState(null, '', a.getAttribute('href')); load(); };
+    document.getElementById('side').appendChild(a);
+  });
+
+  function api(path) {
+    // alternate XHR and fetch so both taps get exercised
+    if (Math.random() < 0.5) return fetch('/api/v9' + path).then(function (r) { return r.json(); });
+    return new Promise(function (res) {
+      var x = new XMLHttpRequest(); x.open('GET', 'https://discord.com/api/v9' + path); x.responseType = 'json';
+      x.onload = function () { res(x.response); }; x.send();
+    });
+  }
+  function li(m) { var el = document.createElement('li'); el.textContent = m.author.username + ': ' + m.content; return el; }
+
+  function load() {
+    var id = location.pathname.split('/')[3];
+    cur = id; oldest = null; done = false;
+    var name = (CHANNELS.find(function (c) { return c[0] === id; }) || [0, 'dm'])[1];
+    document.title = '#' + name + ' | Test Server';
+    document.getElementById('h1').textContent = name;
+    var list = document.getElementById('list'); list.innerHTML = '';
+    api('/channels/' + id + '/messages?limit=50').then(function (ms) {
+      if (cur !== id) return;
+      ms.slice().reverse().forEach(function (m) { list.appendChild(li(m)); });
+      if (ms.length) oldest = ms[ms.length - 1].id;
+      var sc = document.getElementById('sc'); sc.scrollTop = sc.scrollHeight;
+      if (id === CHANNELS[0][0] && ms[0]) api('/channels/' + id + '/messages/' + ms[0].id + '/reactions/' + encodeURIComponent('🔥') + '?limit=100');
+    });
+  }
+
+  document.getElementById('sc').addEventListener('scroll', function () {
+    var sc = this, id = cur;
+    if (sc.scrollTop > 200 || loading || done || !oldest) return;
+    loading = true;
+    api('/channels/' + id + '/messages?before=' + oldest + '&limit=50').then(function (ms) {
+      loading = false;
+      if (cur !== id) return;
+      if (ms.length < 50) done = true;
+      if (!ms.length) return;
+      var list = document.getElementById('list'), h = sc.scrollHeight;
+      ms.forEach(function (m) { list.insertBefore(li(m), list.firstChild); });
+      oldest = ms[ms.length - 1].id;
+      sc.scrollTop += sc.scrollHeight - h;
+    });
+  });
+  load();
+</script>
+</body>
+</html>
