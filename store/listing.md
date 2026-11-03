@@ -28,6 +28,7 @@ WHAT YOU CAN DO
 • Copy a whole chat to the clipboard in one click, ready to paste into notes or an AI assistant
 • Download as Text, Markdown, HTML (with inline images), JSON or CSV
 • Load the last 7, 30 or 90 days, or the full history, with one button. Scrollback scrolls the chat for you and shows progress on the page
+• Remembers what it already saved, so repeat exports are instant and only new messages get loaded
 • Export every text channel in a server at once
 • Keep replies, edits, embeds, stickers, reactions and who reacted
 • Save the images and videos from a chat into a tidy Downloads folder

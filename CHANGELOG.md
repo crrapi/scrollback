@@ -2,6 +2,7 @@
 
 ## 2.0.1 (2026-11-03)
 
+- New: Scrollback remembers which stretches of a chat it saved with no gaps. A 7d / 30d / 90d / All run that is already covered copies to the clipboard instantly, with no scrolling. When new messages arrived since last time, it loads only that gap and stops. Server jobs skip channels that are already covered. Backups keep this information.
 - Fixed: a history job that started with the chat already scrolled to the top could end early without loading older messages. Most visible on slower machines.
 - Fixed: history and server jobs could stall when the Discord tab was in the background, because Chrome fires few scroll events there.
 

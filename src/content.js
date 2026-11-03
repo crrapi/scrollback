@@ -30,6 +30,7 @@
     if (!s.min || SBFormat.cmpId(id, s.min) < 0) s.min = id;
   }
   var started = {}; // cid -> true once the channel start was reached this page load
+  var latest = {};  // cid -> newest message id from this page load's newest-page fetch
   window.addEventListener('message', function (ev) {
     if (ev.source !== window || ev.origin !== location.origin) return;
     var d = ev.data;
@@ -39,9 +40,10 @@
       fire({ type: 'capture', urlChannelId: d.urlChannelId, messages: d.messages });
     } else if (d.kind === 'reactions') {
       fire({ type: 'reactions', cid: d.cid, mid: d.mid, emoji: d.emoji, users: d.users });
-    } else if (d.kind === 'start') {
-      started[d.cid] = true;
-      fire({ type: 'start', cid: d.cid });
+    } else if (d.kind === 'span' && d.span) {
+      if (d.span.latest) latest[d.cid] = d.span.hi;
+      if (d.span.lo === '0') started[d.cid] = true;
+      fire({ type: 'span', cid: d.cid, span: d.span });
     }
   });
 
@@ -80,9 +82,16 @@
     var list = document.querySelector('[data-list-id="chat-messages"]');
     return list ? scrollableAncestor(list, document.body, true) : null;
   }
-  // Stop conditions use only what this page load saw. Saved history can have
-  // gaps (days you never scrolled through), so it never ends a job early.
   function oldestSeen(cid) { return (seen[cid] && seen[cid].min) || null; }
+  async function channelMeta(cid) { var r = await bg({ type: 'channel', channelId: cid }); return (r && r.channel) || null; }
+  // Saved history counts only when one gap-free span runs from the newest
+  // message this page load saw back past the cutoff. Old saves with holes in
+  // them never end a job early.
+  async function covered(cid, days) {
+    if (latest[cid] == null) return false;
+    var meta = await channelMeta(cid);
+    return SBFormat.spanCovers(meta && meta.spans, latest[cid], SBFormat.cutoffId(days));
+  }
 
   // ---- progress panel (closed shadow root, so page CSS cannot reach it) ----
   var panel = null, running = false, stopFlag = false;
@@ -119,9 +128,11 @@
     for (var step = 0; step < 20000; step++) {
       if (stopFlag) return 'stopped';
       var scroller = findScroller(); if (!scroller) return 'no-scroller';
+      // once this page load's scrolling meets saved history, the rest is known
+      if (await covered(cid, days)) return 'covered';
       if (started[cid]) return 'start';
       var oldest = oldestSeen(cid);
-      if (cutoff && oldest && SBFormat.cmpId(oldest, cutoff) <= 0) return 'cutoff';
+      if (latest[cid] == null && cutoff && oldest && SBFormat.cmpId(oldest, cutoff) <= 0) return 'cutoff';
       if (scroller.scrollTop <= 1) {
         // already at the top: setting 0 again fires no scroll event, so the
         // client never asks for older messages. Step down and back up.
@@ -150,6 +161,18 @@
   }
   function range(days) { return days > 0 ? 'last ' + days + 'd' : 'full history'; }
 
+  // ---- already saved: export straight away, nothing to scroll ----
+  async function instant(cid, days) {
+    var settings = ((await bg({ type: 'getSettings' })) || {}).settings || {};
+    var title = titles().title || cid;
+    var out = await bg({ type: 'render', channelId: cid, days: days, format: settings.format, title: title });
+    if (!out) return null;
+    if (out.count) await bg({ type: 'setResult', text: out.text, title: title + ' (' + range(days) + ')', format: settings.format || 'txt' });
+    var media = null;
+    if (settings.mediaWithJobs && out.count) media = await bg({ type: 'saveMedia', channelId: cid, days: days });
+    return { count: out.count, media: media ? media.count : 0 };
+  }
+
   // ---- channel job ----
   async function runChannel(days) {
     var h = here(); if (!h.channelId) return show('Open a channel or DM first.', false);
@@ -157,6 +180,7 @@
     var settings = ((await bg({ type: 'getSettings' })) || {}).settings || {};
     running = true; stopFlag = false;
     try {
+      show('Checking what is already saved…', true);
       var why = await scrollBack(days, cid, settings.pace, function (info) { show('Loading ' + range(days) + ' of ' + title + ' — ' + info, true); });
       if (why === 'no-scroller') return show('Could not find the message list. Open a text channel.', false);
       var out = await bg({ type: 'render', channelId: cid, days: days, format: settings.format, title: title });
@@ -213,8 +237,11 @@
     if (!a) return false;
     a.scrollIntoView({ block: 'center' }); await sleep(120);
     a.click();
-    for (var j = 0; j < 40; j++) { await sleep(150); if (here().channelId === ch.id && findScroller()) return true; }
-    return false;
+    for (var j = 0; j < 40; j++) { await sleep(150); if (here().channelId === ch.id && findScroller()) break; }
+    if (here().channelId !== ch.id || !findScroller()) return false;
+    // wait for the newest page so saved history can be matched against it
+    for (var k = 0; k < 20 && latest[ch.id] == null; k++) await sleep(150);
+    return true;
   }
 
   // ---- server job ----
@@ -234,7 +261,8 @@
         show(tag + ' — opening…', true);
         if (!(await openChannel(ch, guild))) continue; // voice, forum, locked: skip
         scanned++;
-        await scrollBack(days, ch.id, settings.pace, function (info) { show(tag + ' — ' + info, true); });
+        if (await covered(ch.id, days)) show(tag + ' — already saved', true);
+        else await scrollBack(days, ch.id, settings.pace, function (info) { show(tag + ' — ' + info, true); });
         var out = await bg({ type: 'render', channelId: ch.id, days: days, format: fmt, title: '#' + ch.name });
         if (out && out.count) { parts.push(out.text); total += out.count; }
         if (settings.mediaWithJobs && out && out.count && !stopFlag) {
@@ -257,9 +285,17 @@
     if (!msg || sender.id !== chrome.runtime.id) return;
     if (msg.type === 'job') {
       if (running) return reply({ ok: false, busy: true });
-      var days = Math.max(0, parseInt(msg.days, 10) || 0);
-      (msg.scope === 'server' ? runServer(days) : runChannel(days)).catch(function (e) { running = false; show('Job failed: ' + (e && e.message || e), false); });
-      return reply({ ok: true });
+      var days = Math.max(0, parseInt(msg.days, 10) || 0), cid = here().channelId;
+      (async function () {
+        // channel range already saved gap-free: hand the result straight back
+        if (msg.scope !== 'server' && cid && await covered(cid, days)) {
+          var r = await instant(cid, days);
+          if (r) return reply({ ok: true, instant: true, count: r.count, media: r.media });
+        }
+        (msg.scope === 'server' ? runServer(days) : runChannel(days)).catch(function (e) { running = false; show('Job failed: ' + (e && e.message || e), false); });
+        reply({ ok: true });
+      })();
+      return true;
     }
     if (msg.type === 'jobStop') { stopFlag = true; return reply({ ok: true }); }
     if (msg.type === 'jobStatus') return reply({ running: running });

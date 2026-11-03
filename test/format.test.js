@@ -76,3 +76,26 @@ test('filename is safe', () => {
   assert.ok(!n.includes('/'));
   assert.match(n, /-30d-.*\.md$/);
 });
+
+test('spans merge when they overlap or touch, and stay apart otherwise', () => {
+  let s = F.mergeSpan([], { lo: '100', hi: '200' });
+  s = F.mergeSpan(s, { lo: '300', hi: '400' });
+  assert.deepStrictEqual(s, [{ lo: '100', hi: '200' }, { lo: '300', hi: '400' }]);
+  s = F.mergeSpan(s, { lo: '200', hi: '300' }); // touches both ends
+  assert.deepStrictEqual(s, [{ lo: '100', hi: '400' }]);
+  s = F.mergeSpan(s, { lo: '0', hi: '150' });   // reaches the channel start
+  assert.deepStrictEqual(s, [{ lo: '0', hi: '400' }]);
+  // ids of different lengths compare as numbers, not strings
+  s = F.mergeSpan([{ lo: '99999999999999999', hi: '100000000000000005' }], { lo: '100000000000000005', hi: '1000000000000000000' });
+  assert.strictEqual(s.length, 1);
+});
+
+test('spanCovers needs one gap-free span from the newest id back to the cutoff', () => {
+  const spans = [{ lo: '100', hi: '200' }, { lo: '300', hi: '400' }];
+  assert.strictEqual(F.spanCovers(spans, '400', '300'), true);
+  assert.strictEqual(F.spanCovers(spans, '400', '250'), false); // gap 200..300
+  assert.strictEqual(F.spanCovers(spans, '450', '300'), false); // newest not saved
+  assert.strictEqual(F.spanCovers([{ lo: '0', hi: '400' }], '400', '0'), true);
+  assert.strictEqual(F.cutoffId(0), '0');
+  assert.ok(F.cmpId(F.cutoffId(30), F.snowflakeForMs(Date.now())) < 0);
+});

@@ -48,6 +48,7 @@ It never touches your login token and never calls Discord's API. It reads only t
 | **One-click copy** | The whole chat on your clipboard, ready for notes or an AI assistant |
 | **Five export formats** | Text, Markdown, HTML (inline images, dark mode), JSON, CSV (formula-safe) |
 | **History jobs** | Load the last 7, 30 or 90 days or everything. Progress shows on the page, with a Stop button |
+| **Gap-aware** | Remembers what it already saved with no gaps. Repeat runs are instant; after new messages it loads only the gap |
 | **Whole server** | Export every text channel in a server into one file |
 | **Full context** | Replies, edits, embeds, stickers, reactions and who reacted |
 | **Media** | Save a chat's images and videos into `Downloads/Scrollback/<chat>/` |
@@ -71,7 +72,7 @@ Works on `discord.com`, `ptb.discord.com` and `canary.discord.com` in Chrome 111
 
 1. Open a channel or DM on discord.com and scroll as usual. Scrollback saves every message Discord loads.
 2. Click the toolbar icon. **Copy all** or **Download** exports what is saved.
-3. Click **7d**, **30d**, **90d** or **All** to have Scrollback scroll back for you. The file downloads when the job ends.
+3. Click **7d**, **30d**, **90d** or **All** to have Scrollback scroll back for you. The file downloads when the job ends. If that range is already saved, it copies to your clipboard instantly instead.
 4. Open **Library** for every saved chat, search, date ranges, backups and settings.
 
 ## How it works
@@ -89,6 +90,7 @@ flowchart TB
 
 - **`src/tap.js`** runs in the page and wraps `fetch` and `XMLHttpRequest` read-only. It clones only the response bodies of message, search and reaction-list endpoints. It never looks at requests or headers.
 - **`src/content.js`** relays captures, reports the channel and server name, and runs history jobs by scrolling the real message list. Server jobs click through the sidebar one channel at a time.
+- Every message page Discord loads is gap-free on its own, so the tap also reports the id range it covers. These ranges merge into **spans** per channel. A job checks whether one span runs from the newest message back past its cutoff. If it does, the export is instant. If not, it scrolls until the new span meets the saved one.
 - **`src/background.js`** validates and trims every message before it hits storage, renders exports, and saves media only when you ask.
 - **`src/db.js`** is the IndexedDB store, shared by the service worker and the library page.
 - **`src/format.js`** has the snowflake math and all five exporters.

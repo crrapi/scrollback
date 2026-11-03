@@ -52,17 +52,41 @@
     if (list.length) post({ kind: 'messages', urlChannelId: cid, messages: list });
   }
 
-  // a page shorter than its limit, loaded from the newest end or going older,
-  // means the channel start was reached
-  function handleStart(u, body) {
+  // Every message-list page is gap-free on its own, so report the id range it
+  // covers. "before=B" covers [oldest, B]; the newest page covers
+  // [oldest, newest] and marks this page load's latest message. A page shorter
+  // than its limit, loaded going older, reaches the channel start (lo '0').
+  var ID = /^\d{1,21}$/;
+  function handleSpan(u, body) {
     var p = path(u);
     if (!p || !Array.isArray(body)) return;
     var cm = /\/channels\/(\d+)\/messages\/?$/.exec(p);
     if (!cm) return;
     var q; try { q = new URL(u, location.href).searchParams; } catch (e) { return; }
-    if (q.has('after') || q.has('around')) return;
     var limit = parseInt(q.get('limit') || '50', 10) || 50;
-    if (body.length < limit) post({ kind: 'start', cid: cm[1] });
+    var lo = null, hi = null;
+    body.forEach(function (m) {
+      if (!m || !ID.test(m.id)) return;
+      var v = BigInt(m.id);
+      if (lo === null || v < lo) lo = v;
+      if (hi === null || v > hi) hi = v;
+    });
+    var short = body.length < limit, before = q.get('before'), after = q.get('after');
+    var span;
+    if (q.has('around')) {
+      if (lo === null) return;
+      span = { lo: String(lo), hi: String(hi) };
+    } else if (after !== null) {
+      if (!ID.test(after)) return;
+      span = { lo: after, hi: hi === null ? after : String(hi) };
+    } else if (before !== null) {
+      if (!ID.test(before)) return;
+      span = { lo: short ? '0' : String(lo), hi: before };
+    } else {
+      // newest page: nothing newer existed when it loaded
+      span = { lo: short ? '0' : String(lo), hi: hi === null ? '0' : String(hi), latest: true };
+    }
+    post({ kind: 'span', cid: cm[1], span: span });
   }
 
   var origFetch = window.fetch;
@@ -72,7 +96,7 @@
       var u = typeof input === 'string' ? input : input instanceof URL ? input.href : input && input.url;
       if (wanted(u)) p.then(function (res) {
         if (!res.ok) return;
-        res.clone().json().then(function (j) { handle(u, j); handleStart(u, j); }).catch(function () {});
+        res.clone().json().then(function (j) { handle(u, j); handleSpan(u, j); }).catch(function () {});
       }).catch(function () {});
     } catch (e) {}
     return p;
@@ -95,7 +119,7 @@
           if (xhr.responseType === 'json') body = xhr.response;
           else if (xhr.responseType === '' || xhr.responseType === 'text') body = JSON.parse(xhr.responseText);
         } catch (e) { return; }
-        handle(u, body); handleStart(u, body);
+        handle(u, body); handleSpan(u, body);
       });
     } catch (e) {}
     return origSend.apply(this, arguments);

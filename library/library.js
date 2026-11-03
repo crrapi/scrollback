@@ -187,6 +187,11 @@ $('restore').onchange = async (ev) => {
     for (let i = 0; i < rows.length; i += 1000) await SBDB.putMessages(rows.slice(i, i + 1000));
     const target = cid || (rows[0] && rows[0].channel_id);
     if (target) await SBDB.patchChannel(target, { title: s(ch.title, 120) || null, guildId: F.isId(ch.guildId) ? ch.guildId : null, guildName: s(ch.guildName, 120) || null, reachedStart: ch.reachedStart === true || undefined });
+    // gap-free spans from the backup, so restored chats skip re-scrolling
+    const idOrStart = (v) => v === '0' || F.isId(v);
+    if (target) for (const sp of (Array.isArray(ch.spans) ? ch.spans : []).slice(0, 1000)) {
+      if (sp && idOrStart(sp.lo) && idOrStart(sp.hi) && F.cmpId(sp.lo, sp.hi) <= 0) await SBDB.addSpan(target, { lo: sp.lo, hi: sp.hi });
+    }
     n += rows.length;
   }
   flash($('dataStatus'), `Restored ${n.toLocaleString()} messages.`);

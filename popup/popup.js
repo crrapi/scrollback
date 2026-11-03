@@ -104,6 +104,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       const r = await sendTab({ type: 'job', scope, days });
       if (!r) return status('Reload the Discord tab, then try again.', false);
       if (r.busy) return status('A job is already running in this tab.', false);
+      if (r.instant) {
+        // the range was already saved gap-free, so the page rendered it right away
+        const label = days > 0 ? `last ${days}d` : 'full history';
+        if (!r.count) return status(`No messages in the ${label}.`, false);
+        const res = ((await send({ type: 'getResult' })) || {}).result;
+        if (res && res.text) await copy(res.text, `${label}: ${r.count.toLocaleString()} messages, already saved`);
+        await initLastResult();
+        return;
+      }
       $('runningRow').hidden = false;
       status(scope === 'server'
         ? 'Server job started. Leave the tab open; the file downloads when it ends.'

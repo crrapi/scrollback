@@ -68,6 +68,43 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const all = (fs.readFileSync(await d2.path(), 'utf8').match(/^\[/gm) || []).length;
   ch = await sw.evaluate(() => SBDB.getChannel('222222222222222222'));
   ok(all === 600 && ch.count === 600 && ch.reachedStart === true, `full history: export ${all}/600, stored ${ch.count}, reachedStart=${ch.reachedStart}`);
+  ok(ch.spans && ch.spans.length === 1 && ch.spans[0].lo === '0', 'one gap-free span from the channel start: ' + JSON.stringify(ch.spans));
+
+  // --- saved ranges come back instantly, with no scrolling and no fetches ---
+  let before = apiCalls.length, t0 = Date.now();
+  let r = await sendJob('channel', 30);
+  ok(r.instant === true && Math.abs(r.count - expect30) <= 1 && apiCalls.length === before, `30d again is instant: ${r.count} msgs, ${apiCalls.length - before} fetches, ${Date.now() - t0}ms`);
+  r = await sendJob('channel', 0);
+  ok(r.instant === true && r.count === 600, 'full history again is instant: ' + r.count);
+  const last = await sw.evaluate(() => SBDB.kvGet('lastResult'));
+  ok(last && /full history/.test(last.title), 'instant result is kept for "Copy last job"');
+
+  // a fresh page load overlaps saved history, so it is still instant
+  await page.reload(); await sleep(2500);
+  before = apiCalls.length;
+  r = await sendJob('channel', 90);
+  ok(r.instant === true && apiCalls.length === before, 'after a reload, 90d is instant: ' + r.count);
+
+  // new messages since the last visit: only the gap gets loaded
+  const GEN = '222222222222222222', EP = 1420070400000n;
+  const fresh = [];
+  for (let k = 120; k >= 1; k--) {
+    const ms = NOW + k * 1000;
+    fresh.push({ id: (((BigInt(ms) - EP) << 22n) + 3000n + BigInt(k)).toString(), channel_id: GEN, type: 0, content: `new ${k}`, timestamp: new Date(ms).toISOString(), author: { id: '555555555555555555', username: 'late' }, attachments: [], embeds: [], reactions: [] });
+  }
+  DATA[GEN].unshift(...fresh);
+  await page.reload(); await sleep(2500);
+  before = apiCalls.length;
+  const dlGap = page.waitForEvent('download', { timeout: 120e3 });
+  r = await sendJob('channel', 90);
+  ok(r.ok && !r.instant, 'with 120 new messages, 90d is not instant');
+  const gapTxt = fs.readFileSync(await (await dlGap).path(), 'utf8');
+  const expect90 = DATA[GEN].filter((m) => Date.parse(m.timestamp) >= Date.now() - 90 * DAY).length;
+  const got90 = (gapTxt.match(/^\[/gm) || []).length;
+  const gapCalls = apiCalls.slice(before).filter((c) => c.includes('before='));
+  ok(Math.abs(got90 - expect90) <= 1 && gapCalls.length <= 3, `gap fill: ${got90}/${expect90} msgs with only ${gapCalls.length} older-page fetches`);
+  ch = await sw.evaluate(() => SBDB.getChannel('222222222222222222'));
+  ok(ch.spans.length === 1 && ch.spans[0].lo === '0' && ch.count === 720, `spans merged back into one: ${JSON.stringify(ch.spans)}, ${ch.count} stored`);
 
   // --- server job ---
   await sw.evaluate(() => SBDB.kvSet('settings', { format: 'md', mediaWithJobs: true, time: 'iso', pace: 'normal' }));

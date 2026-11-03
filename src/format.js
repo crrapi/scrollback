@@ -21,6 +21,37 @@
   function cmpId(a, b) { a = BigInt(a); b = BigInt(b); return a < b ? -1 : a > b ? 1 : 0; }
   // days <= 0 means "all time"
   function cutoffMs(days, now) { return days > 0 ? (now || Date.now()) - days * 86400000 : -Infinity; }
+  // snowflake a job must reach back to; '0' is the channel start
+  function cutoffId(days, now) { return days > 0 ? snowflakeForMs(cutoffMs(days, now)) : '0'; }
+
+  // ---------- gap-free spans ----------
+  // A span { lo, hi } says every message with lo <= id <= hi is saved, with no
+  // gaps. lo '0' means the span reaches the start of the channel. Spans that
+  // overlap or touch merge, so the list stays sorted and disjoint.
+  function mergeSpan(spans, s) {
+    var lo = s.lo, hi = s.hi, out = [];
+    (spans || []).forEach(function (x) {
+      if (cmpId(x.lo, hi) <= 0 && cmpId(lo, x.hi) <= 0) {
+        if (cmpId(x.lo, lo) < 0) lo = x.lo;
+        if (cmpId(x.hi, hi) > 0) hi = x.hi;
+      } else out.push(x);
+    });
+    out.push({ lo: lo, hi: hi });
+    return out.sort(function (a, b) { return cmpId(a.lo, b.lo); });
+  }
+  function spanAt(spans, id) {
+    if (!id) return null;
+    for (var i = 0; i < (spans || []).length; i++) {
+      var x = spans[i];
+      if (cmpId(x.lo, id) <= 0 && cmpId(id, x.hi) <= 0) return x;
+    }
+    return null;
+  }
+  // true when saved history runs gap-free from `fromId` back to `toId`
+  function spanCovers(spans, fromId, toId) {
+    var x = spanAt(spans, fromId);
+    return !!x && cmpId(x.lo, toId) <= 0;
+  }
 
   // ---------- discord.com URLs ----------
   // /channels/@me/<dm>, /channels/<guild>/<channel>, /channels/<guild>/<channel>/<message>,
@@ -236,7 +267,7 @@
 
   root.SBFormat = {
     VERSION: VERSION, isId: isId, sortKey: sortKey, snowflakeForMs: snowflakeForMs, msFromSnowflake: msFromSnowflake,
-    cmpId: cmpId, cutoffMs: cutoffMs, parseLocation: parseLocation, rowMs: rowMs, sliceDays: sliceDays,
+    cmpId: cmpId, cutoffMs: cutoffMs, cutoffId: cutoffId, mergeSpan: mergeSpan, spanAt: spanAt, spanCovers: spanCovers, parseLocation: parseLocation, rowMs: rowMs, sliceDays: sliceDays,
     isCoveredBack: isCoveredBack, esc: esc, safeUrl: safeUrl, normReply: normReply, day: day,
     text: text, markdown: markdown, csv: csv, json: json, html: html,
     FORMATS: FORMATS, render: render, slug: slug, filename: filename

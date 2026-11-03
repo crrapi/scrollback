@@ -132,7 +132,12 @@ var HANDLERS = {
     if (!isId(m.cid) || !isId(m.mid)) return;
     return SBDB.setReactionUsers(m.cid, m.mid, str(m.emoji, 100), (m.users || []).slice(0, 100).map(function (u) { return str(u && u.name, 100); }));
   },
-  start: function (m) { if (isId(m.cid)) return SBDB.patchChannel(m.cid, { reachedStart: true }); },
+  span: function (m) {
+    var s = m.span || {};
+    var ok = function (v) { return v === '0' || isId(v); };
+    if (!isId(m.cid) || !ok(s.lo) || !ok(s.hi) || SBFormat.cmpId(s.lo, s.hi) > 0) return;
+    return SBDB.addSpan(m.cid, { lo: s.lo, hi: s.hi });
+  },
   where: function (m) {
     if (!isId(m.channelId)) return;
     return SBDB.patchChannel(m.channelId, { title: str(m.title, 120) || null, guildId: isId(m.guildId) ? m.guildId : null, guildName: str(m.guildName, 120) || null });
@@ -151,7 +156,7 @@ var HANDLERS = {
   setResult: async function (m) { await SBDB.kvSet('lastResult', { text: str(m.text, 200e6), title: str(m.title, 200), format: m.format, ts: Date.now() }); return { ok: true }; },
   getResult: async function () { return { result: await SBDB.kvGet('lastResult', null) }; }
 };
-var FIRE_AND_FORGET = { capture: 1, reactions: 1, start: 1, where: 1 };
+var FIRE_AND_FORGET = { capture: 1, reactions: 1, span: 1, where: 1 };
 
 chrome.runtime.onMessage.addListener(function (msg, sender, reply) {
   if (!msg || !HANDLERS[msg.type] || sender.id !== chrome.runtime.id) return;

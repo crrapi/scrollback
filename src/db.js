@@ -3,7 +3,7 @@
  * (same extension origin, same database). Exposes self.SBDB.
  *
  *   messages  key id, index byChannel [channel_id, sk]   (sk = zero-padded id)
- *   channels  key id  { id, guildId, title, count, oldestId, newestId, reachedStart, updated }
+ *   channels  key id  { id, guildId, title, count, oldestId, newestId, reachedStart, spans, updated }
  *   kv        key k   { k, v }   settings, last job result, schema flags
  *   saved     key k   attachment keys already downloaded (dedup)
  */
@@ -106,6 +106,19 @@
     return done(tx);
   }
 
+  // record a gap-free id range; reaching lo '0' also marks the channel start
+  async function addSpan(cid, span) {
+    var db = await open(); var tx = db.transaction('channels', 'readwrite'); var cs = tx.objectStore('channels');
+    var g = cs.get(cid);
+    g.onsuccess = function () {
+      var c = g.result || { id: cid, guildId: null, title: null, count: 0, oldestId: null, newestId: null, reachedStart: false, updated: Date.now() };
+      c.spans = SBFormat.mergeSpan(c.spans, span);
+      if (span.lo === '0') c.reachedStart = true;
+      cs.put(c);
+    };
+    return done(tx);
+  }
+
   async function getChannel(cid) { var db = await open(); return (await req(db.transaction('channels').objectStore('channels').get(cid))) || null; }
   async function listChannels() { var db = await open(); return req(db.transaction('channels').objectStore('channels').getAll()); }
 
@@ -148,7 +161,7 @@
 
   root.SBDB = {
     open: open, kvGet: kvGet, kvSet: kvSet, putMessages: putMessages, setReactionUsers: setReactionUsers,
-    patchChannel: patchChannel, getChannel: getChannel, listChannels: listChannels, getMessages: getMessages,
+    patchChannel: patchChannel, addSpan: addSpan, getChannel: getChannel, listChannels: listChannels, getMessages: getMessages,
     deleteChannel: deleteChannel, wipe: wipe, claimSaved: claimSaved
   };
 })(typeof self !== 'undefined' ? self : globalThis);
