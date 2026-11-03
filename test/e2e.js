@@ -15,6 +15,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   // --- v1 migration ---
   const migrated = await sw.evaluate(async () => {
+    await ready; // let the startup migration finish before seeding v1 data
     await chrome.storage.local.set({
       'ch:999999999999999999': { map: { '999999999999999991': { id: '999999999999999991', author: 'old', ts: '2025-01-01T00:00:00Z', content: 'from v1', attachments: [] } } },
       'dpe:meta': { '999999999999999999': { title: 'legacy-chan', count: 1 } }

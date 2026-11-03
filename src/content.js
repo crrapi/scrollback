@@ -115,7 +115,15 @@
       if (started[cid]) return 'start';
       var oldest = oldestSeen(cid);
       if (cutoff && oldest && SBFormat.cmpId(oldest, cutoff) <= 0) return 'cutoff';
-      scroller.scrollTop = Math.max(0, scroller.scrollTop - Math.floor(scroller.clientHeight * 0.85));
+      if (scroller.scrollTop <= 1) {
+        // already at the top: setting 0 again fires no scroll event, so the
+        // client never asks for older messages. Step down and back up.
+        scroller.scrollTop = Math.min(120, scroller.scrollHeight);
+        await sleep(80);
+        scroller.scrollTop = 0;
+      } else {
+        scroller.scrollTop = Math.max(0, scroller.scrollTop - Math.floor(scroller.clientHeight * 0.85));
+      }
       await sleep(base + Math.floor(Math.random() * base * 0.5));
       var nowMin = oldestSeen(cid);
       if (nowMin === lastMin) idle++; else { idle = 0; lastMin = nowMin; }
