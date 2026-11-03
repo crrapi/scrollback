@@ -105,6 +105,13 @@
     if (!busy) setTimeout(function () { if (panel && !running) { panel.host.remove(); panel = null; } }, 10000);
   }
 
+  // Chrome fires scroll events from its rendering loop, which barely runs in
+  // a background tab. Dispatch one so the client's loader still sees the move.
+  function scrollEl(el, top) {
+    el.scrollTop = top;
+    el.dispatchEvent(new Event('scroll'));
+  }
+
   // ---- scroll this channel back until the cutoff or the channel start ----
   async function scrollBack(days, cid, pace, onProgress) {
     var cutoff = days > 0 ? SBFormat.snowflakeForMs(SBFormat.cutoffMs(days)) : null;
@@ -118,11 +125,11 @@
       if (scroller.scrollTop <= 1) {
         // already at the top: setting 0 again fires no scroll event, so the
         // client never asks for older messages. Step down and back up.
-        scroller.scrollTop = Math.min(120, scroller.scrollHeight);
+        scrollEl(scroller, Math.min(120, scroller.scrollHeight));
         await sleep(80);
-        scroller.scrollTop = 0;
+        scrollEl(scroller, 0);
       } else {
-        scroller.scrollTop = Math.max(0, scroller.scrollTop - Math.floor(scroller.clientHeight * 0.85));
+        scrollEl(scroller, Math.max(0, scroller.scrollTop - Math.floor(scroller.clientHeight * 0.85)));
       }
       await sleep(base + Math.floor(Math.random() * base * 0.5));
       var nowMin = oldestSeen(cid);
@@ -182,14 +189,14 @@
     scan();
     var sc = sidebarScroller(guild);
     if (sc) {
-      sc.scrollTop = 0; await sleep(300); scan();
+      scrollEl(sc, 0); await sleep(300); scan();
       var last = -1;
       for (var i = 0; i < 400 && !stopFlag; i++) {
-        sc.scrollTop = Math.min(sc.scrollHeight, sc.scrollTop + Math.floor(sc.clientHeight * 0.8));
+        scrollEl(sc, Math.min(sc.scrollHeight, sc.scrollTop + Math.floor(sc.clientHeight * 0.8)));
         await sleep(220); scan();
         if (sc.scrollTop === last) break; last = sc.scrollTop;
       }
-      sc.scrollTop = 0; await sleep(200);
+      scrollEl(sc, 0); await sleep(200);
     }
     return Array.from(found.values());
   }
@@ -198,7 +205,7 @@
     if (!a) {
       var sc = sidebarScroller(guild);
       for (var i = 0; sc && i < 400 && !a; i++) {
-        sc.scrollTop += Math.floor(sc.clientHeight * 0.8); await sleep(140);
+        scrollEl(sc, sc.scrollTop + Math.floor(sc.clientHeight * 0.8)); await sleep(140);
         a = document.querySelector(sel);
         if (sc.scrollTop + sc.clientHeight >= sc.scrollHeight) break;
       }
